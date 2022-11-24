@@ -1,6 +1,25 @@
 import TicketService from "../src/pairtest/TicketService";
+import TicketTypeRequest from "../src/pairtest/lib/TicketTypeRequest";
 
 const ticketService = new TicketService();
+
+describe("valid purchase requests", () => {
+    test("valid account id", () => {
+        const testValues = [
+            1,
+            2,
+            3,
+            2 ** 32,
+            Number.MAX_SAFE_INTEGER,
+        ];
+
+        for (const value of testValues) {
+            expect(() => {
+                ticketService.purchaseTickets(value, new TicketTypeRequest("ADULT", 1));
+            }).not.toThrow();
+        }
+    });
+});
 
 describe("invalid purchase requests", () => {
     test("invalid account id type", () => {
