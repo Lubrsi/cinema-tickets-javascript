@@ -1,5 +1,7 @@
 import TicketTypeRequest from './lib/TicketTypeRequest.js';
 import InvalidPurchaseException from './lib/InvalidPurchaseException.js';
+import TicketPaymentService from '../thirdparty/paymentgateway/TicketPaymentService.js';
+import SeatReservationService from '../thirdparty/seatbooking/SeatReservationService.js';
 
 export default class TicketService {
   /**
@@ -68,5 +70,45 @@ export default class TicketService {
     // - Child and Infant tickets cannot be purchased without purchasing an Adult ticket.
     if (ticketTypeTotals.ADULT === 0 && (ticketTypeTotals.INFANT > 0 || ticketTypeTotals.CHILD > 0))
       throw new InvalidPurchaseException("Child and Infant tickets cannot be purchased without purchasing an Adult ticket");
+
+    // Business rule:
+    // - The ticket prices are based on the type of ticket (see table below).
+    // |   Ticket Type    |     Price   |
+    // | ---------------- | ----------- |
+    // |    INFANT        |    £0       |
+    // |    CHILD         |    £10      |
+    // |    ADULT         |    £20      |
+    const INFANT_TICKET_PRICE_GBP = 0;
+    const CHILD_TICKET_PRICE_GBP = 10;
+    const ADULT_TICKET_PRICE_GBP = 20;
+
+    // Task:
+    // - Calculates the correct amount for the requested tickets and makes a payment request to the `TicketPaymentService`.
+    const totalPrice = (INFANT_TICKET_PRICE_GBP * ticketTypeTotals.INFANT)
+                     + (CHILD_TICKET_PRICE_GBP * ticketTypeTotals.CHILD)
+                     + (ADULT_TICKET_PRICE_GBP * ticketTypeTotals.ADULT);
+    
+    // Task:
+    // - Calculates the correct no of seats to reserve and makes a seat reservation request to the `SeatReservationService`.  
+    // Business rule:
+    // - Infants do not pay for a ticket and are not allocated a seat. They will be sitting on an Adult's lap.
+    const totalSeats = ticketTypeTotals.CHILD + ticketTypeTotals.ADULT;
+
+    // Business rule:
+    // - There is an existing `TicketPaymentService` responsible for taking payments.
+    // Assumptions:
+    // - The `TicketPaymentService` implementation is an external provider with no defects. You do not need to worry about how the actual payment happens.
+    // - The payment will always go through once a payment request has been made to the `TicketPaymentService`.
+    // - [Accounts] also have sufficient funds to pay for any no of tickets.
+    const ticketPaymentService = new TicketPaymentService();
+    ticketPaymentService.makePayment(accountId, totalPrice);
+
+    // Business rule:
+    // - There is an existing `SeatReservationService` responsible for reserving seats.
+    // Assumptions:
+    // - The `SeatReservationService` implementation is an external provider with no defects. You do not need to worry about how the seat reservation algorithm works.
+    // - The seat will always be reserved once a reservation request has been made to the `SeatReservationService`.
+    const seatReservationService = new SeatReservationService();
+    seatReservationService.reserveSeat(accountId, totalSeats);
   }
 }
