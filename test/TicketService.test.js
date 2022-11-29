@@ -25,6 +25,12 @@ describe("valid purchase requests", () => {
             ticketService.purchaseTickets(1, new TicketTypeRequest("ADULT", 1), new TicketTypeRequest("INFANT", 9), new TicketTypeRequest("CHILD", 10));
         }).not.toThrow();
     });
+
+    test("allows multiple ticket type requests of the same type", () => {
+        expect(() => {
+            ticketService.purchaseTickets(1, new TicketTypeRequest("ADULT", 1), new TicketTypeRequest("ADULT", 3), new TicketTypeRequest("CHILD", 2), new TicketTypeRequest("INFANT", 1), new TicketTypeRequest("CHILD", 1), new TicketTypeRequest("INFANT", 1));
+        }).not.toThrow();
+    });
 });
 
 const invalidTestValues = [
