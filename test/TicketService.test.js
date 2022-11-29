@@ -19,6 +19,12 @@ describe("valid purchase requests", () => {
             }).not.toThrow();
         }
     });
+
+    test("allows child and infant tickets as long as there's an adult ticket", () => {
+        expect(() => {
+            ticketService.purchaseTickets(1, new TicketTypeRequest("ADULT", 1), new TicketTypeRequest("INFANT", 9), new TicketTypeRequest("CHILD", 10));
+        }).not.toThrow();
+    });
 });
 
 const invalidTestValues = [
