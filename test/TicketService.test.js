@@ -171,3 +171,50 @@ describe("invalid purchase requests", () => {
         }
     });
 });
+
+describe("order of validation operations", () => {
+    test("validates account ID before ticket type requests", () => {
+        expect(() => {
+            ticketService.purchaseTickets(NaN, new TicketTypeRequest("ADULT", 99999));
+        }).toThrow("Account ID is not an integer");
+
+        expect(() => {
+            ticketService.purchaseTickets(-1, new TicketTypeRequest("ADULT", 99999));
+        }).toThrow("Account ID must be greater than zero");
+    });
+
+    test("checks length of variadic ticket type requests before actually validating the contents", () => {
+        const requests = [];
+        for (let i = 0; i <= 20; i++) {
+            requests.push(new TicketTypeRequest("ADULT", 1));
+        }
+
+        expect(() => {
+            ticketService.purchaseTickets(1, NaN, -1, -2, ...requests);
+        }).toThrow("Only a maximum of 20 tickets can be purchased at a time");
+    });
+
+    test("validates each request in passed in order", () => {
+        expect(() => {
+            ticketService.purchaseTickets(1, NaN, new TicketTypeRequest("ADULT", -1));
+        }).toThrow("The ticket requests contain a non-request value");
+
+        expect(() => {
+            ticketService.purchaseTickets(1, new TicketTypeRequest("ADULT", -1), NaN);
+        }).toThrow("A ticket request is requesting zero or less tickets");
+    });
+
+    test("checks total amount of tickets before checking adult ticket with child/infant tickets requirement", () => {
+        expect(() => {
+            ticketService.purchaseTickets(1, new TicketTypeRequest("CHILD", 21));
+        }).toThrow("Only a maximum of 20 tickets can be purchased at a time");
+
+        expect(() => {
+            ticketService.purchaseTickets(1, new TicketTypeRequest("INFANT", 21));
+        }).toThrow("Only a maximum of 20 tickets can be purchased at a time");
+
+        expect(() => {
+            ticketService.purchaseTickets(1, new TicketTypeRequest("INFANT", 11), new TicketTypeRequest("CHILD", 11));
+        }).toThrow("Only a maximum of 20 tickets can be purchased at a time");
+    });
+});
